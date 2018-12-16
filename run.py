@@ -23,9 +23,9 @@ COCO_MODEL_PATH = os.path.join(ROOT_DIR, "weights", "mask_rcnn_coco.h5")
 
 # исходные изображения
 IMAGE_DIR = os.path.join(ROOT_DIR, "images")
+file_names = next(os.walk(IMAGE_DIR))[2]
 
-config = CocoConfig()
-
+config = CocoConfig(1)
 
 # Создаем модель
 model = modellib.MaskRCNN(mode="inference", model_dir=MODEL_DIR, config=config)
@@ -33,13 +33,16 @@ model = modellib.MaskRCNN(mode="inference", model_dir=MODEL_DIR, config=config)
 # Загружаем веса
 model.load_weights(COCO_MODEL_PATH, by_name=True)
 
-file_names = next(os.walk(IMAGE_DIR))[2]
-image = skimage.io.imread(os.path.join(IMAGE_DIR, random.choice(file_names)))
 
-# Run detection
-results = model.detect([image], verbose=1)
+images = [skimage.io.imread(os.path.join(IMAGE_DIR, fn)) for fn in file_names ]
 
-# Visualize results
-r = results[0]
-visualize.display_instances(image, r['rois'], r['masks'], r['class_ids'], 
-                            class_names, r['scores'])
+# Запуск распознавания
+results = []
+for i in images:
+    results += [(i, model.detect([i], verbose=1))]
+
+# Отображение результата
+for (i,res) in results:
+    r = res[0]
+    visualize.display_instances(i, r['rois'], r['masks'], r['class_ids'], 
+                                class_names, r['scores'])
